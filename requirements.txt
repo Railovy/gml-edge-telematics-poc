@@ -1,0 +1,2 @@
+# Dependance unique : affichage couleur dans PowerShell / CMD Windows
+colorama>=0.4.6
