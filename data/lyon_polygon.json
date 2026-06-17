@@ -1,0 +1,30 @@
+{
+  "zone_name": "ZFE Lyon Centre",
+  "description": "Polygone exact enonce (Annexe 3)",
+  "polygon": [
+    {
+      "lat": 45.78,
+      "lon": 4.8
+    },
+    {
+      "lat": 45.79,
+      "lon": 4.86
+    },
+    {
+      "lat": 45.75,
+      "lon": 4.88
+    },
+    {
+      "lat": 45.73,
+      "lon": 4.82
+    },
+    {
+      "lat": 45.745,
+      "lon": 4.81
+    },
+    {
+      "lat": 45.78,
+      "lon": 4.8
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "vehicle_id": "GML_TRUCK_001",
+  "driver_id": "DEMO_DRIVER",
+  "description": "Trace GPS exacte enonce",
+  "points": [
+    {
+      "id": 1,
+      "lat": 45.81,
+      "lon": 4.75,
+      "timestamp": "08:00:00",
+      "expected": "OUT"
+    },
+    {
+      "id": 2,
+      "lat": 45.8,
+      "lon": 4.78,
+      "timestamp": "08:00:10",
+      "expected": "OUT"
+    },
+    {
+      "id": 3,
+      "lat": 45.785,
+      "lon": 4.805,
+      "timestamp": "08:00:20",
+      "expected": "IN (Bordure)"
+    },
+    {
+      "id": 4,
+      "lat": 45.76,
+      "lon": 4.8357,
+      "timestamp": "08:00:30",
+      "expected": "IN (Centre ZFE)"
+    },
+    {
+      "id": 5,
+      "lat": 45.75,
+      "lon": 4.85,
+      "timestamp": "08:00:40",
+      "expected": "IN"
+    }
+  ]
+}
