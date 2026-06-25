@@ -1,54 +1,38 @@
-# GML Edge Telematics — POC
+# GML Edge Telematics - POC (mode offline)
 
-**MBA Big Data & IA — Bloc 2 — GreenMove Logistics**
-Role : CTO | Flotte : 50 camions | Python 3.10+
+Preuve de faisabilite de deux fonctions critiques portees par la tablette
+durcie embarquee, executables localement sans reseau, sur materiel contraint
+(Snapdragon 660, 150 Mo de RAM) :
 
----
+1. **Moteur ZFE (Geo)** - detection d'entree en Zone a Faibles Emissions sans reseau.
+2. **Moteur Safety (Physics)** - detection de freinage violent depuis l'accelerometre.
 
-## Objectif
-
-Prouver localement la faisabilite de deux fonctionnalites critiques du pivot Edge Computing :
-
-1. **Moteur ZFE** — Detection d'entree en Zone a Faibles Emissions sans reseau (mode offline)
-2. **Moteur Safety** — Detection de freinage violent depuis les donnees accelerometre
-
----
-
-## Prerequis
-
-- Python 3.10 ou superieur
-- colorama (affichage couleur dans PowerShell / CMD)
-
-```bash
-pip install colorama
-```
-
-Aucune autre dependance externe. Bibliotheque standard Python uniquement.
-
----
-
-## Structure du projet
+## 1. Arborescence
 
 ```
 gml-edge-telematics-poc/
-├── src/
-│   └── main.py                   # Moteurs ZFE et Safety (avec couleurs)
-├── data/
-│   ├── lyon_polygon.json          # Polygone ZFE Lyon (4 sommets)
-│   ├── truck_gps.json             # Trace GPS de test (5 points)
-│   └── accelerometer_data.csv     # Donnees capteur 100 Hz (10 echantillons)
-├── output/                        # Genere a l'execution (vide au depart)
-│   ├── zfe_alerts.log             # Alertes ZFE horodatees
-│   └── daily_score.json           # Score conducteur + evenements Safety
-├── docs/
-│   └── poc_screens/               # Captures d'ecran de la demonstration
-├── run_tests.py                   # Tests de non-regression (11/11 PASS)
-└── README.md                      # Ce fichier
+  data/
+    lyon_polygon.json        polygone ZFE NON rectangulaire (6 sommets)
+    truck_gps.json           trace GPS (5 points : approche + entree)
+    accelerometer_data.csv   10 echantillons (acc_x, acc_y, acc_z)
+  src/
+    main.py                  moteurs ZFE + Safety
+  output/                    genere a l'execution
+    zfe_alerts.log
+    daily_score.json
+  run_all.py                 lance main.py PUIS run_tests.py (point d'entree)
+  run_tests.py               tests de non-regression (14 cas)
+  requirements.txt
+  README.md
 ```
 
----
+## 2. Prerequis
 
-## Execution
+Python 3.10 ou superieur. Dependance unique et optionnelle : `colorama`
+(couleurs console sous PowerShell / CMD). Sans elle, le POC tourne en noir et
+blanc, sans planter (repli automatique).
+
+## 3. Execution
 
 ### Sous Windows (PowerShell)
 
@@ -56,133 +40,114 @@ gml-edge-telematics-poc/
 # Aller dans le dossier du projet
 cd C:\chemin\vers\gml-edge-telematics-poc
 
-# Nettoyer les sorties precedentes (optionnel)
-Remove-Item output\*.log, output\*.json -ErrorAction SilentlyContinue
+# Installer la dependance optionnelle
+pip install -r requirements.txt
 
-# Lancer le POC
-python src/main.py
+# Nettoyer les sorties precedentes (optionnel, pour une demo propre)
+if (Test-Path output) { Remove-Item output -Recurse -Force }
 
-# Lancer les tests de non-regression
-python run_tests.py
+# Lancer le POC complet : moteurs + tests en une commande
+python run_all.py
 ```
 
 ### Sous Linux / macOS
 
 ```bash
 cd gml-edge-telematics-poc
-rm -f output/*.log output/*.json
-python src/main.py
-python run_tests.py
+pip install -r requirements.txt
+
+# Nettoyer les sorties precedentes (optionnel)
+rm -rf output
+
+# Lancer le POC complet : moteurs + tests
+python3 run_all.py
 ```
 
----
-
-## Sorties attendues
-
-### Console (python src/main.py)
+`run_all.py` execute d'abord `src/main.py` (qui genere les sorties), puis
+`run_tests.py` (qui verifie les 14 cas). Les deux scripts restent lancables
+separement si besoin :
 
 ```
-================================================================
- GML EDGE TELEMATICS - POC (mode offline)
-================================================================
---- Moteur 1 : ZFE (Geo) -------------------------------------
-[ZFE] Bounding Box pre-filtre : lat[45.73,45.79] lon[4.80,4.88]
-       point 1 | attendu=OUT | detecte=OUT | dist bord=5560 m
-       point 2 | attendu=OUT | detecte=OUT | dist bord=3336 m
-[PRE-ALERT ZFE] point=3 ts=08:00:20 approche zone (dist bord=389 m)
-[ALERT ZFE] point=4 ts=08:00:30 lat=45.76 lon=4.8357 (dist bord=2769 m)
-[ALERT ZFE] point=5 ts=08:00:40 lat=45.75 lon=4.85 (dist bord=2224 m)
---- Moteur 2 : Safety (Physics) ------------------------------
-[SAFETY] Freinage violent : ts=1678880005 acc_y=-3.45 m/s2 (seuil -2.5) severite=HIGH
---- Synthese --------------------------------------------------
-ZFE   : 2 entree(s) en zone, 1 pre-alerte(s) d'approche
-Safety: 1 freinage(s) violent(s) | score conducteur = 85/100
-================================================================
+python run_all.py        # tout : moteurs + tests (recommande)
+python src/main.py       # moteurs seuls (genere output/)
+python run_tests.py      # tests de non-regression seuls (doit afficher 14/14)
 ```
 
-### Tests de non-regression (python run_tests.py)
+## 4. Sorties attendues
+
+### Console (extrait de `python run_all.py`)
 
 ```
-============================================================
- GML POC - Tests de non-regression
-============================================================
-[TEST] Moteur ZFE :
-  [PASS] Point 1 = OUT
-  [PASS] Point 2 = OUT
-  [PASS] Point 3 = PRE_ALERT
-  [PASS] Point 4 = IN
-  [PASS] Point 5 = IN
-[TEST] Moteur Safety :
-  [PASS] 1 freinage violent detecte
-  [PASS] Score conducteur = 85/100
-  [PASS] Valeur min acc_y = -3.45
-  [PASS] Severite = HIGH
-[TEST] Fichiers de sortie :
-  [PASS] output/zfe_alerts.log existe
-  [PASS] output/daily_score.json existe
-============================================================
- Bilan : 11/11 tests passes
- SUCCES - POC valide pour la demonstration
-============================================================
+--- Moteur 1 : ZFE (Geo) -----------------------------------------
+[ZFE] Bounding Box pre-filtre : lat[45.730,45.790] lon[4.800,4.880] (marge 500 m)
+       point 1 | attendu=OUT | detecte=OUT | rejet O(1) (hors boite, distance non calculee)
+       point 2 | attendu=OUT | detecte=OUT | rejet O(1) (hors boite, distance non calculee)
+[PRE-ALERT ZFE] point=3 ts=08:00:20 approche zone (dist bord=454 m)
+[ALERT ZFE] ENTREE point=4 ts=08:00:30 lat=45.76 lon=4.8357 (profondeur=2324 m)
+[ALERT ZFE] PRESENCE point=5 ts=08:00:40 lat=45.75 lon=4.85 (profondeur=1027 m)
+--- Moteur 2 : Safety (Physics) ----------------------------------
+[HARSH_BRAKING] ts=1678880005 acc_y=-3.45 m/s2 (seuil -2.5)
+   -> evenement freinage : pic=-3.45 m/s2 sur 1 echantillon(s) | severite=HIGH
+--- Synthese -----------------------------------------------------
+ZFE    : 1 entree(s), 1 pre-alerte(s) d'approche
+Safety : 1 echantillon(s) sous seuil => 1 evenement(s) | score = 85/100
 ```
 
----
+Points 1 et 2 : **aucune distance n'est calculee**, ils sont rejetes en O(1) hors
+de la boite englobante (c'est le role de la Bounding Box). Seuls les points
+proches ou internes (3, 4, 5) declenchent le calcul de distance et le ray casting.
 
-## Algorithmes
+### Fichiers generes
 
-### Moteur ZFE
+- `output/zfe_alerts.log` : pre-alerte point 3 (454 m du bord), entree point 4
+  (profondeur 2324 m), presence point 5 (profondeur 1027 m).
+- `output/daily_score.json` : 1 echantillon sous seuil (acc_y = -3.45) regroupe
+  en 1 evenement HIGH, score 85/100.
 
-| Etape | Algorithme | Complexite | Role |
-|---|---|---|---|
-| 1 | Bounding Box | O(1) | Rejet rapide des positions hors rectangle |
-| 2 | Ray Casting | O(N) | Detection precise dans le polygone |
-| 3 | Distance au bord | O(N) | Pre-alerte a moins de 500m de la frontiere |
+### Tests
 
-### Moteur Safety
+```
+[PASS] Bilan : 14/14 tests passes - POC valide pour la demonstration
+```
 
-- Seuil : -2.5 m/s2 sur l'axe Y longitudinal
-- Note : l'enonce indique 2.5G = 24.5 m/s2, impossible pour un camion. Le CSV est en m/s2.
-- Severite HIGH (-15 pts) si -5.0 < acc_y <= -2.5
-- Severite SEVERE (-25 pts) si acc_y <= -5.0
-- Score final = max(0, 100 - penalites)
+## 5. Ambiguite de seuil (point critique de l'enonce)
 
----
+Seuil operationnel retenu : `acc_y < -2.5 m/s2` (annexe). `2.5 G` vaudrait
+environ 24,5 m/s2, une deceleration de quasi-collision jamais atteinte en
+freinage de service : ce seuil rendrait le detecteur muet. La ligne
+`acc_y = -3.45` est donc bien classee `HARSH_BRAKING`, ce que les tests confirment.
 
-## Ambiguites de l'enonce traitees
+## 6. Choix techniques defendables en soutenance
 
-**Seuil de freinage** : L'enonce indique "> 2.5G". 2.5G = 24.5 m/s2, valeur physiquement
-impossible pour un camion (max reel : 0.7 a 0.9G = 7 a 9 m/s2). Le CSV contient des m/s2.
-Seuil retenu : -2.5 m/s2.
+**Bounding Box + Ray Casting reellement justifies.** Le polygone est NON
+rectangulaire. Les points 1 et 2 sont hors de la boite englobante elargie
+(marge de pre-alerte de 500 m) et sont rejetes en O(1) SANS calcul de distance
+ni ray casting. Le calcul O(V) de distance et le ray casting n'ont lieu que pour
+les points proches ou internes (points 3, 4, 5) : seul le ray casting permet de
+distinguer un point proche du bord mais hors zone (point 3, en pre-alerte) d'un
+point reellement a l'interieur du polygone (points 4 et 5).
 
-**Point GPS 3 (bordure)** : Annote "IN (Bordure)" dans l'enonce mais geometriquement situe
-a 389m au nord du polygone. Le moteur retourne la verite geometrique (hors zone) et declenche
-une PRE_ALERT via la bande des 500m. Comportement metier correct : alerter AVANT la frontiere.
+**Traitement en flux O(N).** L'accelerometre est lu ligne par ligne, memoire
+constante. A 100 Hz sur 3 axes (plusieurs millions d'echantillons par jour et
+par camion), un O(N^2) serait intenable sur la cible.
 
----
+**Score par evenement, pas par echantillon.** A 100 Hz, un freinage peut couvrir
+plusieurs echantillons consecutifs sous le seuil. Les compter individuellement
+surpenaliserait un seul geste. Les echantillons consecutifs sont regroupes en un
+evenement, classe par son pic (HIGH si pic > -5 m/s2, SEVERE sinon). Dans ce jeu
+de donnees, un seul echantillon (acc_y = -3.45) franchit le seuil : il forme un
+unique evenement HIGH, d'ou un score de 85/100.
 
-## Limites du POC
+**Detection d'entree.** Le log distingue l'ENTREE (transition hors zone vers
+zone) de la PRESENCE (points suivants deja a l'interieur), pour une boite noire
+auditable.
 
-- Donnees simulees, non issues d'une vraie tablette Zebra ET40
-- Bruit capteur non modelise (en production : filtre Kalman ou moyenne mobile)
-- Pas de persistance SQLite (en production : base embarquee pour le flux 100 Hz)
-- Pas de chiffrement local (en production : AES-256 + MDM)
-- Pas de synchronisation 4G differee (en production : upload des agregats au retour reseau)
+## 7. Limites assumees
 
----
-
-## Contexte business
-
-| Indicateur | Valeur |
-|---|---|
-| Investissement CAPEX | 35 000 EUR |
-| Mois de rentabilite | Mois 7 |
-| Gain net 36 mois (scenario central) | 279 100 EUR |
-| ROI | 384 % |
-| Reduction transmission 4G | Facteur > 1 000 |
-
----
-
-## Auteur
-
-GreenMove Logistics — CTO  
-MBA Big Data & IA — STUDI — Bloc 2 — 2025/2026
+Polygone et trace GPS synthetiques : a remplacer par la donnee ZFE officielle de
+la collectivite (mise a jour OTA) avant tout usage reel. La trace GPS est
+echantillonnee a faible frequence pour la lisibilite du POC ; la precision de
+detection d'entree reelle est bornee par la frequence GPS, pas par les 100 Hz de
+l'accelerometre. Le seuil unique ne distingue pas un freinage d'urgence legitime
+d'une conduite agressive : enrichissement V1 (contexte vitesse, duree,
+recurrence) a calibrer avec l'assureur.
