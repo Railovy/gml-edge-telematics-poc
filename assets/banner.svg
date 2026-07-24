@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="280" viewBox="0 0 1280 280" font-family="'Segoe UI',Arial,sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a1628"/><stop offset="0.55" stop-color="#0d2a3f"/><stop offset="1" stop-color="#08404a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#35D04F"/><stop offset="1" stop-color="#5BC8C8"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#35D04F" stop-opacity="0.25"/><stop offset="1" stop-color="#35D04F" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1280" height="280" fill="url(#bg)"/>
+  <!-- grille discrete -->
+  <g stroke="#1b3a52" stroke-width="1" opacity="0.5">
+    <path d="M0 70 H1280 M0 140 H1280 M0 210 H1280"/>
+    <path d="M160 0 V280 M320 0 V280 M480 0 V280 M640 0 V280 M800 0 V280 M960 0 V280 M1120 0 V280"/>
+  </g>
+  <!-- halo -->
+  <ellipse cx="1050" cy="140" rx="260" ry="180" fill="url(#halo)"/>
+  <!-- polygone ZFE stylise a droite -->
+  <g transform="translate(980,60)" opacity="0.9">
+    <polygon points="60,20 170,10 200,90 120,150 20,110" fill="none" stroke="url(#accent)" stroke-width="2.5" filter="url(#glow)"/>
+    <circle cx="60" cy="20" r="4" fill="#35D04F"/><circle cx="170" cy="10" r="4" fill="#35D04F"/>
+    <circle cx="200" cy="90" r="4" fill="#35D04F"/><circle cx="120" cy="150" r="4" fill="#35D04F"/>
+    <circle cx="20" cy="110" r="4" fill="#35D04F"/>
+    <!-- point interne (alerte) -->
+    <circle cx="110" cy="75" r="6" fill="#FF4D4D" filter="url(#glow)"/>
+    <!-- point approche (pre-alerte) -->
+    <circle cx="245" cy="60" r="5" fill="#F4C430" filter="url(#glow)"/>
+  </g>
+  <!-- titre -->
+  <text x="70" y="115" fill="#ffffff" font-size="52" font-weight="800" letter-spacing="-1">GML Edge Telematics</text>
+  <rect x="72" y="132" width="150" height="5" rx="2.5" fill="url(#accent)"/>
+  <text x="70" y="175" fill="#8fb8c9" font-size="23" font-weight="500">Geofencing ZFE et detection de freinage, 100% embarque, sans reseau</text>
+  <!-- puces techno -->
+  <g font-size="15" font-weight="600">
+    <rect x="70" y="205" width="140" height="34" rx="17" fill="#12283a" stroke="#2a4a5f"/>
+    <text x="140" y="227" fill="#5BC8C8" text-anchor="middle">Edge Computing</text>
+    <rect x="222" y="205" width="120" height="34" rx="17" fill="#12283a" stroke="#2a4a5f"/>
+    <text x="282" y="227" fill="#35D04F" text-anchor="middle">Ray Casting</text>
+    <rect x="354" y="205" width="130" height="34" rx="17" fill="#12283a" stroke="#2a4a5f"/>
+    <text x="419" y="227" fill="#F4C430" text-anchor="middle">Safety 100 Hz</text>
+    <rect x="496" y="205" width="150" height="34" rx="17" fill="#12283a" stroke="#2a4a5f"/>
+    <text x="571" y="227" fill="#8fb8c9" text-anchor="middle">Offline-first</text>
+  </g>
+</svg>

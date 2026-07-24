@@ -1,0 +1,4 @@
+# Dependance unique : affichage couleur dans PowerShell / CMD Windows
+colorama>=0.4.6
+# Dependance optionnelle pour la demo filmee (fenetre terminal facon macOS)
+PySide6>=6.5 ; extra == 'demo'
