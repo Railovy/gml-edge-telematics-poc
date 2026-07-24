@@ -17,12 +17,18 @@ Repli terminal si PySide6 est absent : python3 run_all.py
 import os
 import re
 import sys
+import time
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 
+# Temporisation entre chaque ligne affichee, en secondes.
+# Donne un effet "live" lisible pour la captation video (au lieu d'un affichage
+# instantane). Mettre 0.0 pour desactiver, 0.12 pour un rythme lent et demonstratif.
+LINE_DELAY_S = 0.06
+
 try:
     from PySide6.QtCore import QObject, QPoint, Qt, QThread, Signal
-    from PySide6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor
+    from PySide6.QtGui import QFont, QTextCursor
     from PySide6.QtWidgets import (
         QApplication, QFrame, QHBoxLayout, QLabel, QMainWindow,
         QPushButton, QTextEdit, QVBoxLayout, QWidget,
@@ -68,48 +74,6 @@ def ansi_to_html(text: str) -> str:
     return "".join(out)
 
 
-def ansi_to_segments(text: str) -> list[tuple[str, str | None, bool]]:
-    """Découpe une ligne ANSI en segments texte/couleur/gras.
-
-    Contrairement à l'insertion HTML, l'insertion de texte formaté conserve
-    exactement les espaces et permet de créer un vrai bloc Qt par ligne.
-    """
-    segments: list[tuple[str, str | None, bool]] = []
-    color: str | None = None
-    bold = False
-    pos = 0
-
-    for match in ANSI_RE.finditer(text):
-        if match.start() > pos:
-            segments.append((text[pos:match.start()], color, bold))
-
-        codes = [c for c in match.group(1).split(";") if c]
-        if not codes:
-            codes = ["0"]
-
-        for code in codes:
-            if code == "0":
-                color = None
-                bold = False
-            elif code == "1":
-                bold = True
-            elif code == "22":
-                bold = False
-            elif code == "39":
-                color = None
-            elif code in ANSI_TO_HTML:
-                color = ANSI_TO_HTML[code]
-
-        pos = match.end()
-
-    if pos < len(text):
-        segments.append((text[pos:], color, bold))
-
-    if not segments:
-        segments.append(("", color, bold))
-    return segments
-
-
 class Worker(QObject):
     """Execute run_all.py dans un thread et emet chaque ligne de sortie."""
     line = Signal(str)
@@ -127,7 +91,9 @@ class Worker(QObject):
             text=True, encoding="utf-8", errors="replace", env=env, bufsize=1,
         )
         for raw in proc.stdout:
-            self.line.emit(raw.rstrip("\r\n"))
+            self.line.emit(raw.rstrip("\n"))
+            if LINE_DELAY_S > 0:
+                time.sleep(LINE_DELAY_S)  # rythme "live" pour la captation video
         proc.wait()
         self.done.emit(proc.returncode)
 
@@ -215,7 +181,6 @@ class TerminalWindow(QMainWindow):
         self.terminal.setReadOnly(True)
         self.terminal.setObjectName("terminal")
         self.terminal.setFont(QFont("Cascadia Mono", 12))
-        self.terminal.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
 
         layout.addWidget(self.title_bar)
         layout.addWidget(self.terminal)
@@ -244,8 +209,7 @@ class TerminalWindow(QMainWindow):
         if self._thread and self._thread.isRunning():
             return
         self.terminal.clear()
-        self._append_text_line(r"PS C:\greenmove-edge-poc> python3 run_all.py", "#65BDF7", bold=False)
-        self._append_text_line("")
+        self._append_html('<span style="color:#65BDF7;">PS C:\\greenmove-edge-poc&gt; python3 run_all.py</span>')
         self._thread = QThread()
         self._worker = Worker()
         self._worker.moveToThread(self._thread)
@@ -279,49 +243,32 @@ class TerminalWindow(QMainWindow):
         return None
 
     def _on_line(self, text: str) -> None:
-        """Ajoute une ligne réelle dans le QTextDocument.
-
-        Chaque signal du processus devient un bloc Qt distinct. Cette méthode
-        évite le défaut de la version précédente, où insertHtml(<div>) concaténait
-        visuellement toutes les sorties sur une seule ligne.
-        """
-        segments = ansi_to_segments(text)
-        has_ansi = bool(ANSI_RE.search(text))
-
-        if not has_ansi:
-            fallback = self._line_color(text)
-            fallback_bold = (
-                text.strip().startswith(("[ALERT", "[HARSH", "[PRE-ALERT", "[OK]"))
-                or "tests passes" in text
-            )
-            segments = [(text, fallback, fallback_bold)]
-
-        self._append_segments(segments)
+        html = ansi_to_html(text)
+        # Si aucun span couleur n'a ete produit (ANSI absent), on recolorise par prefixe.
+        if "<span" not in html:
+            color = self._line_color(text)
+            if color:
+                safe = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                bold = text.strip().startswith(("[ALERT", "[HARSH", "[PRE-ALERT", "[OK]")) or "tests passes" in text
+                style = f"color:{color};" + ("font-weight:bold;" if bold else "")
+                html = f'<span style="{style}">{safe}</span>'
+        self._append_html(html or "&nbsp;")
 
     def _on_done(self, code: int) -> None:
         color = "#35D04F" if code == 0 else "#FF4D4D"
         msg = "run_all.py termine (code 0)" if code == 0 else f"run_all.py a echoue (code {code})"
-        self._append_text_line("")
-        self._append_text_line(msg, color, bold=True)
+        self._append_html(f'<span style="color:{color};font-weight:bold;">{msg}</span>')
 
-    def _append_text_line(self, text: str, color: str | None = None, bold: bool = False) -> None:
-        self._append_segments([(text, color, bold)])
-
-    def _append_segments(self, segments: list[tuple[str, str | None, bool]]) -> None:
-        """Insère les segments puis crée explicitement une nouvelle ligne Qt."""
+    def _append_html(self, html: str) -> None:
         cursor = self.terminal.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
-
-        for text, color, bold in segments:
-            if not text:
-                continue
-            fmt = QTextCharFormat()
-            fmt.setForeground(QColor(color or "#D5D9DE"))
-            fmt.setFontWeight(QFont.Weight.Bold if bold else QFont.Weight.Normal)
-            cursor.insertText(text, fmt)
-
-        # Un vrai bloc QTextDocument par ligne : pas de concaténation horizontale.
-        cursor.insertBlock()
+        # Ouvrir un nouveau bloc (= nouveau paragraphe) sauf pour la toute
+        # premiere ligne, afin que chaque ligne reste sur sa propre ligne.
+        if not self.terminal.document().isEmpty():
+            cursor.insertBlock()
+        cursor.insertHtml(
+            f'<span style="font-family:Cascadia Mono; font-size:13px; white-space:pre;">{html}</span>'
+        )
         self.terminal.setTextCursor(cursor)
         self.terminal.ensureCursorVisible()
 
