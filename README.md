@@ -4,9 +4,9 @@
 
 <br/>
 
-**Preuve de concept d'une telematique embarquee qui decide en local, sans reseau.**
-Detection d'entree en Zone a Faibles Emissions et detection de freinage violent,
-executees sur tablette durcie a bord du camion, meme en zone blanche.
+**Preuve de concept d'une télématique embarquée qui décide en local, sans réseau.**
+Détection d'entrée en Zone à Faibles Émissions et détection de freinage violent,
+exécutées sur tablette durcie à bord du camion, même en zone blanche.
 
 <br/>
 
@@ -19,7 +19,7 @@ executees sur tablette durcie a bord du camion, meme en zone blanche.
 
 <br/>
 
-[Contexte](#-contexte) · [Architecture](#-architecture) · [Demarrage](#-demarrage-rapide) · [Resultats](#-resultats-attendus) · [Choix techniques](#-choix-techniques) · [Limites](#-limites-assumees)
+[Contexte](#-contexte) · [Architecture](#-architecture) · [Démarrage](#-démarrage-rapide) · [Résultats](#-résultats-attendus) · [Choix techniques](#-choix-techniques) · [Limites](#-limites-assumées)
 
 </div>
 
@@ -31,19 +31,19 @@ executees sur tablette durcie a bord du camion, meme en zone blanche.
 
 ## 📍 Contexte
 
-Un poids lourd entre dans la ZFE de Lyon via le tunnel de Fourviere. La 4G tombe,
-la carte ZFE ne se charge pas, aucune alerte : **375 EUR d'amende**. En parallele,
+Un poids lourd entre dans la ZFE de Lyon via le tunnel de Fourvière. La 4G tombe,
+la carte ZFE ne se charge pas, aucune alerte : **375 EUR d'amende**. En parallèle,
 l'assureur refuse un bonus faute de preuve comportementale, car le chronotachygraphe
-ne mesure ni freinage, ni virage, ni acceleration tri-axiale.
+ne mesure ni freinage, ni virage, ni accélération tri-axiale.
 
-Ce POC demontre la reponse : **deplacer la decision critique dans le camion**. Deux
-moteurs tournent en local sur materiel contraint (Snapdragon 660, 150 Mo de RAM),
-sans dependre du cloud.
+Ce POC démontre la réponse : **déplacer la décision critique dans le camion**. Deux
+moteurs tournent en local sur matériel contraint (Snapdragon 660, 150 Mo de RAM),
+sans dépendre du cloud.
 
 | Moteur | Role | Entree | Sortie |
 |---|---|---|---|
-| **ZFE (Geo)** | Detecter l'entree en zone sans reseau | Trace GPS + polygone ZFE | Pre-alerte, entree, presence |
-| **Safety (Physics)** | Detecter le freinage violent | Accelerometre 3 axes | Evenement HIGH/SEVERE, score |
+| **ZFE (Geo)** | Détecter l'entrée en zone sans réseau | Trace GPS + polygone ZFE | Pré-alerte, entrée, présence |
+| **Safety (Physics)** | Détecter le freinage violent | Accéléromètre 3 axes | Événement HIGH/SEVERE, score |
 
 <br/>
 
@@ -55,15 +55,15 @@ sans dependre du cloud.
 
 ```mermaid
 flowchart LR
-    GPS[Trace GPS] --> BB{Bounding Box<br/>O(1)}
-    BB -->|hors boite| REJECT[Rejet immediat<br/>points 1, 2]
-    BB -->|dans boite elargie| RC[Ray Casting<br/>O(V)]
-    RC --> CLASS[Classification<br/>OUT / PRE-ALERT / ON_BOUNDARY / IN]
-    ACC[Accelerometre 100 Hz] --> STREAM[Lecture en flux<br/>O(N)]
-    STREAM --> GROUP[Regroupement<br/>par evenement]
-    GROUP --> SCORE[Score 0-100]
-    CLASS --> LOG[(zfe_alerts.log)]
-    SCORE --> JSON[(daily_score.json)]
+    GPS[Trace GPS] --> BB{Bounding Box en O de 1}
+    BB -->|hors boite| REJECT[Rejet immediat des points 1 et 2]
+    BB -->|dans boite elargie| RC[Ray Casting en O de V]
+    RC --> CLASS[Classification OUT, PRE-ALERT, ON_BOUNDARY ou IN]
+    ACC[Accelerometre 100 Hz] --> STREAM[Lecture en flux en O de N]
+    STREAM --> GROUP[Regroupement par evenement]
+    GROUP --> SCORE[Score de 0 a 100]
+    CLASS --> LOG[Journal zfe_alerts.log]
+    SCORE --> JSON[Fichier daily_score.json]
 
     style BB fill:#0d2a3f,stroke:#5BC8C8,color:#fff
     style RC fill:#0d2a3f,stroke:#35D04F,color:#fff
@@ -71,10 +71,10 @@ flowchart LR
     style SCORE fill:#0d2a3f,stroke:#F4C430,color:#fff
 ```
 
-Le filtrage a deux etages est le coeur du POC : la **Bounding Box rejette en temps
+Le filtrage à deux étages est le cœur du POC : la **Bounding Box rejette en temps
 constant** les positions lointaines (points 1 et 2, sans aucun calcul de distance),
-et le **Ray Casting O(V) ne s'execute que** pour les positions candidates (points 3,
-4, 5). C'est ce qui rend le calcul tenable sur materiel embarque.
+et le **Ray Casting en O(V) ne s'exécute que** pour les positions candidates (points 3,
+4 et 5). C'est ce qui rend le calcul tenable sur matériel embarqué.
 
 <br/>
 
@@ -108,9 +108,9 @@ gml-edge-telematics-poc/
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ```
 
-## 🚀 Demarrage rapide
+## 🚀 Démarrage rapide
 
-**Prerequis :** Python 3.10 ou superieur. Dependance unique et optionnelle :
+**Prérequis :** Python 3.10 ou supérieur. Dépendance unique et optionnelle :
 `colorama` (couleurs console). Sans elle, le POC tourne en noir et blanc, sans planter.
 
 <table>
@@ -150,8 +150,8 @@ python3 run_all.py
 </tr>
 </table>
 
-`run_all.py` execute d'abord `src/main.py` (qui genere les sorties), puis
-`run_tests.py` (qui verifie les 48 cas). Les scripts restent lancables separement :
+`run_all.py` exécute d'abord `src/main.py` (qui génère les sorties), puis
+`run_tests.py` (qui vérifie les 48 cas). Les scripts restent lançables séparément :
 
 ```bash
 python run_all.py        # tout : moteurs + tests (recommande)
@@ -165,7 +165,7 @@ python run_tests.py      # tests seuls (doit afficher 48/48)
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ```
 
-## 📊 Resultats attendus
+## 📊 Résultats attendus
 
 Sortie brute du terminal (sans accents, telle que l'affiche la console) :
 
@@ -185,16 +185,16 @@ ZFE    : 1 entree(s), 1 pre-alerte(s), 0 bordure(s)
 Safety : 1 echantillon(s) sous seuil => 1 evenement(s) | score = 85/100
 ```
 
-> **Note.** Les points 1 et 2 ne declenchent aucun calcul de distance : rejetes en
-> O(1) hors de la boite englobante. Seuls les points 3, 4, 5 declenchent le ray
+> **Note.** Les points 1 et 2 ne déclenchent aucun calcul de distance : rejetés en
+> O(1) hors de la boîte englobante. Seuls les points 3, 4 et 5 déclenchent le ray
 > casting. Ce bloc terminal est volontairement sans accents, comme la console.
 
 **Fichiers generes**
 
 | Fichier | Contenu |
 |---|---|
-| `output/zfe_alerts.log` | pre-alerte point 3 (451 m du bord), entree point 4 (2284 m), presence point 5 (1004 m) |
-| `output/daily_score.json` | 1 echantillon sous seuil (acc_y = -3.45) regroupe en 1 evenement HIGH, score 85/100 |
+| `output/zfe_alerts.log` | pré-alerte point 3 (451 m du bord), entrée point 4 (2284 m), présence point 5 (1004 m) |
+| `output/daily_score.json` | 1 échantillon sous seuil (acc_y = -3.45) regroupé en 1 événement HIGH, score 85/100 |
 
 **Tests**
 
@@ -203,9 +203,9 @@ Safety : 1 echantillon(s) sous seuil => 1 evenement(s) | score = 85/100
 ```
 
 Les 48 tests couvrent les cas nominaux **et** 8 cas de robustesse : fichier absent,
-JSON malforme, colonne `acc_y` manquante, valeur non numerique, classification
-exacte des 5 sommets et des 5 milieux d'aretes (`ON_BOUNDARY`), precontrole des
-entrees avant ecriture.
+JSON malformé, colonne `acc_y` manquante, valeur non numérique, classification
+exacte des 5 sommets et des 5 milieux d'arêtes (`ON_BOUNDARY`), précontrôle des
+entrées avant écriture.
 
 <br/>
 
@@ -213,19 +213,19 @@ entrees avant ecriture.
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ```
 
-## 🎬 Demonstration filmee (optionnel)
+## 🎬 Démonstration filmée (optionnel)
 
-Le script `run_all_gui.py` ouvre une fenetre facon macOS (trois boutons rouge,
-jaune, vert) et **execute le vrai `run_all.py` en direct**, en affichant sa sortie
-colorisee ligne par ligne. Aucune valeur n'est recopiee : tout provient de
-l'execution reelle. Les scripts existants ne sont pas modifies.
+Le script `run_all_gui.py` ouvre une fenêtre façon macOS (trois boutons rouge,
+jaune, vert) et **exécute le vrai `run_all.py` en direct**, en affichant sa sortie
+colorisée ligne par ligne. Aucune valeur n'est recopiée : tout provient de
+l'exécution réelle. Les scripts existants ne sont pas modifiés.
 
 ```bash
 pip install PySide6
 python3 run_all_gui.py
 ```
 
-Si PySide6 est absent, `run_all_gui.py` bascule automatiquement sur l'execution
+Si PySide6 est absent, `run_all_gui.py` bascule automatiquement sur l'exécution
 terminal de `run_all.py`.
 
 <br/>
@@ -237,17 +237,17 @@ terminal de `run_all.py`.
 ## 🧠 Choix techniques
 
 <details>
-<summary><b>Bounding Box + Ray Casting reellement justifies</b></summary>
+<summary><b>Bounding Box + Ray Casting réellement justifiés</b></summary>
 
 <br/>
 
-Le polygone est **non rectangulaire**. Les points 1 et 2 sont hors de la boite
-englobante elargie (marge de pre-alerte de 500 m) et rejetes en O(1) sans calcul de
-distance ni ray casting. Le statut `ON_BOUNDARY` est traite par distance metrique
-avant le ray casting, afin de stabiliser sommets et aretes. Le calcul O(V) n'a lieu
-que pour les points proches ou internes (3, 4, 5) : seul le ray casting distingue un
-point proche du bord mais hors zone (point 3, pre-alerte a 451 m) d'un point
-reellement interieur (points 4 et 5).
+Le polygone est **non rectangulaire**. Les points 1 et 2 sont hors de la boîte
+englobante élargie (marge de pré-alerte de 500 m) et rejetés en O(1) sans calcul de
+distance ni ray casting. Le statut `ON_BOUNDARY` est traité par distance métrique
+avant le ray casting, afin de stabiliser sommets et arêtes. Le calcul O(V) n'a lieu
+que pour les points proches ou internes (3, 4 et 5) : seul le ray casting distingue un
+point proche du bord mais hors zone (point 3, pré-alerte à 451 m) d'un point
+réellement intérieur (points 4 et 5).
 
 </details>
 
@@ -256,33 +256,33 @@ reellement interieur (points 4 et 5).
 
 <br/>
 
-L'accelerometre est lu ligne par ligne, en memoire constante. A 100 Hz sur 3 axes
-(plusieurs millions d'echantillons par jour et par camion), un O(N²) serait
-intenable sur la cible embarquee.
+L'accéléromètre est lu ligne par ligne, en mémoire constante. À 100 Hz sur 3 axes
+(plusieurs millions d'échantillons par jour et par camion), un O(N²) serait
+intenable sur la cible embarquée.
 
 </details>
 
 <details>
-<summary><b>Score par evenement, pas par echantillon</b></summary>
+<summary><b>Score par événement, pas par échantillon</b></summary>
 
 <br/>
 
-A 100 Hz, un freinage couvre plusieurs echantillons consecutifs sous le seuil. Les
-compter un a un surpenaliserait un seul geste. Les echantillons consecutifs sont
-regroupes en un evenement, classe par son pic (HIGH si pic > -5 m/s², SEVERE sinon).
-Ici, un seul echantillon (acc_y = -3.45) franchit le seuil : un unique evenement
-HIGH, d'ou le score de 85/100.
+À 100 Hz, un freinage couvre plusieurs échantillons consécutifs sous le seuil. Les
+compter un à un surpénaliserait un seul geste. Les échantillons consécutifs sont
+regroupés en un événement, classé par son pic (HIGH si pic > -5 m/s², SEVERE sinon).
+Ici, un seul échantillon (acc_y = -3.45) franchit le seuil : un unique événement
+HIGH, d'où le score de 85/100.
 
 </details>
 
 <details>
-<summary><b>Ambiguite de seuil (point critique de l'enonce)</b></summary>
+<summary><b>Ambiguïté de seuil (point critique de l'énoncé)</b></summary>
 
 <br/>
 
-Seuil operationnel retenu : `acc_y < -2.5 m/s²`. Un seuil de `2.5 G` vaudrait
-environ 24,5 m/s², une deceleration de quasi-collision jamais atteinte en freinage
-de service : le detecteur serait muet. La ligne `acc_y = -3.45` est donc bien classee
+Seuil opérationnel retenu : `acc_y < -2.5 m/s²`. Un seuil de `2.5 G` vaudrait
+environ 24,5 m/s², une décélération de quasi-collision jamais atteinte en freinage
+de service : le détecteur serait muet. La ligne `acc_y = -3.45` est donc bien classée
 `HARSH_BRAKING`, ce que les tests confirment.
 
 </details>
@@ -293,16 +293,16 @@ de service : le detecteur serait muet. La ligne `acc_y = -3.45` est donc bien cl
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ```
 
-## ⚠️ Limites assumees
+## ⚠️ Limites assumées
 
-Polygone et trace GPS **synthetiques** : a remplacer par la donnee ZFE officielle de
-la collectivite (mise a jour OTA) avant tout usage reel. La trace GPS est
-echantillonnee a faible frequence pour la lisibilite ; la precision de detection
-d'entree reelle est bornee par la frequence GPS, pas par les 100 Hz de
-l'accelerometre. Le seuil unique ne distingue pas un freinage d'urgence legitime
-d'une conduite agressive : enrichissement V1 (contexte vitesse, duree, recurrence) a
-calibrer avec l'assureur. Le POC valide la **faisabilite algorithmique** ; la
-compatibilite avec la Zebra ET40 reste a confirmer par un benchmark sur appareil reel.
+Polygone et trace GPS **synthétiques** : à remplacer par la donnée ZFE officielle de
+la collectivité (mise à jour OTA) avant tout usage réel. La trace GPS est
+échantillonnée à faible fréquence pour la lisibilité ; la précision de détection
+d'entrée réelle est bornée par la fréquence GPS, pas par les 100 Hz de
+l'accéléromètre. Le seuil unique ne distingue pas un freinage d'urgence légitime
+d'une conduite agressive : enrichissement V1 (contexte vitesse, durée, récurrence) à
+calibrer avec l'assureur. Le POC valide la **faisabilité algorithmique** ; la
+compatibilité avec la Zebra ET40 reste à confirmer par un benchmark sur appareil réel.
 
 <br/>
 
@@ -314,6 +314,6 @@ compatibilite avec la Zebra ET40 reste a confirmer par un benchmark sur appareil
 
 **MBA Big Data & IA · Bloc 2 · GreenMove Logistics**
 
-*Preuve de concept academique. Chiffres reproductibles par `python3 run_all.py`.*
+*Preuve de concept académique. Chiffres reproductibles par `python3 run_all.py`.*
 
 </div>
