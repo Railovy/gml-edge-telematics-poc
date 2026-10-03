@@ -28,6 +28,7 @@ import math
 import os
 import sys
 import tempfile
+import time
 from pathlib import Path
 from typing import Any
 
@@ -102,7 +103,9 @@ def load_json_strict(path: str | Path, required_key: str) -> dict[str, Any]:
         raise PocDataError(f"fichier absent : {path}")
     except json.JSONDecodeError as e:
         raise PocDataError(f"JSON malforme : {path} ({e.msg}, ligne {e.lineno})")
-    if required_key not in data:
+    if isinstance(data, list):
+        data = {required_key: data}  # format brut de l'enonce (tableau JSON nu)
+    if not isinstance(data, dict) or required_key not in data:
         raise PocDataError(f"cle '{required_key}' absente dans {path}")
     return data
 
@@ -373,7 +376,9 @@ class SafetyEngine:
         col = c_severe if ev["severity"] == "SEVERE" else c_prealert
         print(col(f"   -> evenement freinage : pic={ev['peak_acc_y']} m/s2 sur {ev['samples']} echantillon(s) | severite={ev['severity']}"))
 
-    def score(self) -> int:
+    def score(self) -> int | None:
+        if self.sample_count - self.skipped_rows == 0:
+            return None  # aucune mesure valide : pas de score, jamais 100 par defaut
         return max(0, 100 - sum(self.PENALTY.get(e["severity"], 0) for e in self.events))
 
     def to_json(self, date="2026-06-06", vehicle_id="GML_TRUCK_001", driver_id="DEMO_DRIVER") -> dict[str, Any]:
@@ -410,7 +415,10 @@ def main() -> int:
         print(c_sep("--- Moteur 1 : ZFE (Geo) " + "-" * 41))
         zfe = ZFEEngine(polygon)
         alerts = []
+        replay_s = float(os.environ.get("GML_REPLAY_S", "0") or 0)  # 0 = mode normal (tests)
         for p in gps_points:
+            if replay_s > 0:
+                time.sleep(replay_s)  # rejeu de la trace GPS, point par point, pour la demo
             r = zfe.evaluate(p["id"], p["lat"], p["lon"], p["timestamp"], p.get("expected", "?"))
             if r["status"] in ("IN", "PRE_ALERT", "ON_BOUNDARY"):
                 alerts.append(r)
@@ -435,7 +443,7 @@ def main() -> int:
         boundary = [a for a in alerts if a["status"] == "ON_BOUNDARY"]
         print(c_sep("--- Synthese " + "-" * 53))
         print(c_success(f"ZFE    : {len(in_zone)} entree(s), {len(pre)} pre-alerte(s), {len(boundary)} bordure(s)"))
-        print(c_success(f"Safety : {safety.harsh_sample_count} echantillon(s) sous seuil => {len(safety.events)} evenement(s) | score = {score['daily_safety_score']}/100"))
+        print(c_success(f"Safety : {safety.harsh_sample_count} echantillon(s) sous seuil => {len(safety.events)} evenement(s) | score = {score['daily_safety_score'] if score['daily_safety_score'] is not None else 'N/A (aucune mesure valide)'}{'/100' if score['daily_safety_score'] is not None else ''}"))
         print(c_dim("Fichiers : output/zfe_alerts.log | output/daily_score.json"))
         print(c_sep("=" * 66))
         return 0
