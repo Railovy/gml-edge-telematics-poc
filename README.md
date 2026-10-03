@@ -228,6 +228,29 @@ python3 run_all_gui.py
 Si PySide6 est absent, `run_all_gui.py` bascule automatiquement sur l'exécution
 terminal de `run_all.py`.
 
+### Rejeu de la trace GPS en temps réel
+
+Le moteur peut rejouer la trace GPS point par point, pour montrer l'alerte ZFE
+au moment où le camion entre dans le polygone. La variable `GML_REPLAY_S` fixe
+la pause entre deux points, en secondes.
+
+```powershell
+$env:GML_REPLAY_S = "2"
+python src/main.py
+Remove-Item Env:GML_REPLAY_S
+```
+
+```bash
+GML_REPLAY_S=2 python3 src/main.py
+```
+
+Sans la variable, le moteur traite la trace d'un seul trait. C'est le mode
+utilisé par les tests. Retirez la variable avant `run_all.py`, sinon les tests
+de bout en bout restent verts mais ralentissent.
+
+Le moteur accepte aussi le format brut de l'énoncé (tableau JSON nu). Sans
+aucune mesure valide, le score vaut N/A, jamais 100 par défaut.
+
 <br/>
 
 ```
